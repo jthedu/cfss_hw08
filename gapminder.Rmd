@@ -1,0 +1,13 @@
+---
+title: "Effect of Population Density on Life Expectancy"
+author: "YOUR NAME"
+date: "`r lubridate::today()`"
+output: github_document
+---
+
+
+## Session info
+
+```{r, echo = TRUE}
+devtools::session_info()
+```
