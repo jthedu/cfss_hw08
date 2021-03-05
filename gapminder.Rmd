@@ -38,19 +38,33 @@ gap <- gapminder
 gap$country <- countrycode(gap$country, origin = "country.name", destination = "iso2c")
 
 countryInfo <- countryInfo %>%
-  rename(country = countryCode)
+  mutate(areaInSqKm = as.numeric(areaInSqKm)) %>%
+  rename(area = areaInSqKm, country = countryCode)
+
 
 # want to calculate pop density
 # gap gives lifeExp & population - throughout multiple points in time. so it has multiple rows for each country
 
 # countryInfo gives population & sq area for ONE time. has 1 row for each country 
-left_join(gap, countryInfo, by = "country")
+joined_country <- left_join(gap, countryInfo, by = "country") %>%
+  mutate(popdensity = pop/area) 
 
 ```
 
 
-```{r}
+```{r graphs}
+joined_country %>%
+  ggplot(mapping = aes(x = popdensity, y = lifeExp)) +
+  geom_point(aes(color = continent.x), alpha = 0.2) +
+  geom_smooth() + 
+  labs(title = "As population density increases, life expectancy typically increases", x = "Population density \n(people per square km)", y = "Average life expectancy", color = "Continent")
 
+joined_country %>%
+  ggplot(mapping = aes(x = popdensity, y = lifeExp)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(aes(color = continent.x)) +
+  facet_wrap(~ continent.x, scales = "free") +
+  labs(title = "As population density increases, life expectancy typically increases", x = "Population density \n(people per square km)", y = "Average life expectancy", color = "Continent")
 ```
 
 
