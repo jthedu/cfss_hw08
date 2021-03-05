@@ -1,9 +1,27 @@
 ---
 title: "Effect of Population Density on Life Expectancy"
-author: "YOUR NAME"
+author: "Julia Du"
 date: "`r lubridate::today()`"
-output: github_document
+output: 
+  github_document:
+    toc: true
 ---
+
+## ADD A SETUP CHUNK LATER
+
+## Load necessary libraries
+
+```{r}
+library(tidyverse)
+library(tidymodels)
+library(rcfss)
+library(vip)
+library(lubridate)
+
+set.seed(123)
+
+theme_set(theme_minimal())
+```
 
 
 ## Session info
