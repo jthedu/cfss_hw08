@@ -11,18 +11,57 @@ output:
 
 ## Load necessary libraries
 
-```{r}
+```{r, message = FALSE}
 library(tidyverse)
-library(tidymodels)
 library(rcfss)
-library(vip)
 library(lubridate)
+library(geonames)
+library(countrycode)
+library(gapminder)
 
-set.seed(123)
+#set.seed(123)
 
 theme_set(theme_minimal())
+
+
 ```
 
+## country info from geonames
+```{r}
+countryInfo <- GNcountryInfo()
+# we know this countryInfo df from geonames stores countries using the iso2c format
+gap <- gapminder
+
+
+#countryInfo$countryName <- countrycode(countryInfo$countryName, origin = "country.name", destination = "iso3c")
+
+gap$country <- countrycode(gap$country, origin = "country.name", destination = "iso2c")
+
+countryInfo <- countryInfo %>%
+  rename(country = countryCode)
+
+# want to calculate pop density
+# gap gives lifeExp & population - throughout multiple points in time. so it has multiple rows for each country
+
+# countryInfo gives population & sq area for ONE time. has 1 row for each country 
+left_join(gap, countryInfo, by = "country")
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
 
 ## Session info
 
