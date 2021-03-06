@@ -13,42 +13,38 @@ output:
 
 ```{r, message = FALSE}
 library(tidyverse)
-library(rcfss)
-library(lubridate)
 library(geonames)
 library(countrycode)
 library(gapminder)
-
-#set.seed(123)
+library(tidymodels)
 
 theme_set(theme_minimal())
-
-
 ```
 
 ## country info from geonames
+We know that `geonames` data stores countries using the iso2c format, so we'll convert the `gapminder` country names to be in iso2c format as well.
+Since `gapminder` tracks countries through multiple points in times, it has multiple rows for each country. `geonames` on the other hand only has 1 row for each country & includes info on the square area of the country.
+When we join these 2 dataframes, we'll want to have `gapminder` on the left because it has multiple rows for each country.
+
 ```{r}
 countryInfo <- GNcountryInfo()
-# we know this countryInfo df from geonames stores countries using the iso2c format
 gap <- gapminder
 
-
-#countryInfo$countryName <- countrycode(countryInfo$countryName, origin = "country.name", destination = "iso3c")
-
+# convert country name format for gapminder
 gap$country <- countrycode(gap$country, origin = "country.name", destination = "iso2c")
 
 countryInfo <- countryInfo %>%
   mutate(areaInSqKm = as.numeric(areaInSqKm)) %>%
   rename(area = areaInSqKm, country = countryCode)
 
-
-# want to calculate pop density
-# gap gives lifeExp & population - throughout multiple points in time. so it has multiple rows for each country
-
-# countryInfo gives population & sq area for ONE time. has 1 row for each country 
+# calculate pop density
 joined_country <- left_join(gap, countryInfo, by = "country") %>%
   mutate(popdensity = pop/area) 
 
+neat_join <- joined_country %>%
+  select(countryName, continent.x, year, lifeExp, popdensity)
+
+neat_join
 ```
 
 
@@ -57,24 +53,49 @@ joined_country %>%
   ggplot(mapping = aes(x = popdensity, y = lifeExp)) +
   geom_point(aes(color = continent.x), alpha = 0.2) +
   geom_smooth() + 
-  labs(title = "As population density increases, life expectancy typically increases", x = "Population density \n(people per square km)", y = "Average life expectancy", color = "Continent")
+  labs(title = "As population density increases, life expectancy generally increases", x = "Population density \n(people per square km)", y = "Average life expectancy", color = "Continent")
 
 joined_country %>%
   ggplot(mapping = aes(x = popdensity, y = lifeExp)) +
   geom_point(alpha = 0.2) +
   geom_smooth(aes(color = continent.x)) +
   facet_wrap(~ continent.x, scales = "free") +
-  labs(title = "As population density increases, life expectancy typically increases", x = "Population density \n(people per square km)", y = "Average life expectancy", color = "Continent")
+  labs(title = "As population density increases, life expectancy generally increases", x = "Population density \n(people per square km)", y = "Average life expectancy", color = "Continent")
 ```
+Life expectancy does tend to increase with population density, with an extremely sharp jump from 55 years to about 75 years when we move from a population density of near 0 people per sq. km to about 250 people per sq. km. 
 
+In our faceted graph, there are some fluctuations, but life expectancy generally increases sharply at lower ranges of population densities & then increases more gradually. We see that Oceania looks a bit strange, but that is due to its extremely small number of observations. Asia also stands out for having some extremely high population density values, e.g. 6000 people per sq. km, much higher than the other continents. These extreme values does seem to be due to a few select countries, however, and not a general trend for the Asian continent; most Asian countries are clustered between a population density of 0 and 500 people per sq. km, higher than other continents but much closer than a density of 6000 people per sq. km. Europe also seems to have the highest life expectancies overall.
 
-```{r}
+```{r model}
+set.seed(123)
 
-```
+lm_mod <- linear_reg() %>% 
+  set_engine("lm")
 
+country_split <- initial_split(neat_join)
+country_train <- training(country_split)
+country_test <- testing(country_split)
+folds <- vfold_cv(country_train, v = 10)
 
-```{r}
+country_wf <- workflow() %>%
+  add_model(lm_mod) %>%
+  add_formula(lifeExp ~ popdensity) 
 
+country_fit_rs <- country_wf %>%
+  fit_resamples(folds)
+
+country_fit_rs %>%
+  collect_metrics()
+
+#country_fit <- country_wf %>%
+ # fit(data = neat_join)
+
+#predict(object = country_fit, new_data = neat_join) %>%
+ # mutate(actual_lifeExp = neat_join$lifeExp) %>%
+  #rmse(truth = actual_lifeExp, estimate = .pred)
+
+neat_join %>%
+  summarise(mean = mean(lifeExp), sd = sd(lifeExp))
 ```
 
 ## Session info
