@@ -35,13 +35,21 @@ reference: https://open-platform.theguardian.com/documentation/tag
 ```{r}
 guard_equal <- GET(
   url = "https://content.guardianapis.com/search?", 
-  query = list(q = "equal marriage", 
-               api-key = guardian_api)
+  query = list(`q` = "equal-marriage", 
+               `api-key` = guardian_api)
   )
 
 
-content(guard_equal, as = "parsed", type = "application/json") %>% 
+guardjson <- content(guard_equal, as = "parsed", type = "application/json") %>% 
   as_tibble()
+
+jsonlite::fromJSON(guardjson)
+
+guardjson %>%
+  unnest_auto(response)
+#%>%
+  hoist(9)
+
 
 guard_equal 
 ```
@@ -49,13 +57,50 @@ guard_equal
 ## 
 
 ```{r}
-nyt_equal <- GET(
+
+
+nyt_trump <- GET(
   url = "http://api.nytimes.com/svc/semantic/v2/concept", 
-  query = list(nytd_per = "Trump, Donald", 
-               api-key = nyt_api)
+  query = list(`nytd_per` = "Trump, Donald", 
+               `api-key` = nyt_api)
   )
 
+nyt_trump$url
+nyt_response <- content(nyt_trump, "text")
+
+nyt_response_df <- fromJSON(nyt_response, simplifyDataFrame = TRUE, flatten = TRUE)
+
+str(response_df, max.level = 2)
+
+
 ```
+
+
+
+```{r asoiaf}
+stark <- GET(
+  url = "https://www.anapioficeandfire.com/api/houses",
+  query = list(name = "House Stark")
+  )
+
+stark$url
+
+
+
+asoiaf_houses <- function(housename){
+  response <- GET(url = "https://anapioficeandfire.com/api/houses",
+                  query = list(name = housename))
+  
+  response_df <- content(response) %>%
+    as_tibble()
+  
+}
+
+house <- c("Stark", "Lannister", "Targaryen")
+asoiaf_houses("Stark")
+```
+
+Rachelle Terman - NYT
 
 
 ```{r}
@@ -71,8 +116,14 @@ pterry_quotes <- read_html("https://www.goodreads.com/author/quotes/1654.Terry_P
 
 quotes <- html_nodes(pterry_quotes, ".quoteText")
 
-html_text(quotes) %>%
-  str_trim(side = "both")
+name <- html_text(quotes) %>%
+  str_trim(side = "both") 
+
+gsub("CDATA.*", "", name)
+#%>%
+#  str_remove_all(".CDATA*")
+
+#str_extract
 
 
 quotes1 <-html_nodes(pterry_quotes, ".authorOrTitle")
@@ -80,24 +131,34 @@ quotes1 <-html_nodes(pterry_quotes, ".authorOrTitle")
 html_text(quotes1) %>%
   str_trim(side = "both")
 
+
+# this works
 pterry_tags <- html_nodes(pterry_quotes, ".left")
 
-pterry_tags %>%
-  html_text() %>%
+test <- pterry_tags %>%
+  html_text() #%>%
+#  str_trim(side = "both") 
+
+test %>%
+  str_replace_all(pattern = "tags:", "") %>%
+  str_replace_all(pattern = "\n       ", " ") %>%
   str_trim(side = "both")
 
+pterry_text <- html_nodes(pterry_quotes, "span.authorOrTitle , .quoteText")
 
+try <- pterry_text %>%
+  html_text()
+try %>%
+  str_replace_all(pattern = "")
 
+#separate
 ```
 
 
 ```{r sad}
-randomquotes <- read_html("http://quotes.toscrape.com/")
 
-randomquotes_nodes <- html_nodes(randomquotes, ".tags , .text")
 
-randomquotes_nodes %>%
-  html_text()
+
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
