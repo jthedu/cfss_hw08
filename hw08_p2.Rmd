@@ -15,6 +15,8 @@ library(stringr)
 library(jsonlite)
 library(httr)
 
+library(rvest)
+
 nyt_api <- getOption("nyt_semantics_key")
 guardian_api <- getOption("guardian_key")
 
@@ -28,18 +30,30 @@ compare coverage of BLM this past yr geographically?
 
 track coverage of gay marriage over time? since maybe 2000?
 
+reference: https://open-platform.theguardian.com/documentation/tag
+
 ```{r}
 guard_equal <- GET(
-  url = "https://content.guardianapis.com/tags?",
-  query = list(q = "equal-marriage",
-               format = "xml",
-               api_key = "guardian_api"))
+  url = "https://content.guardianapis.com/search?", 
+  query = list(q = "equal marriage", 
+               api-key = guardian_api)
+  )
 
+
+content(guard_equal, as = "parsed", type = "application/json") %>% 
+  as_tibble()
+
+guard_equal 
 ```
 
 ## 
 
 ```{r}
+nyt_equal <- GET(
+  url = "http://api.nytimes.com/svc/semantic/v2/concept", 
+  query = list(nytd_per = "Trump, Donald", 
+               api-key = nyt_api)
+  )
 
 ```
 
@@ -48,14 +62,42 @@ guard_equal <- GET(
 
 ```
 
-
+## pivot to scraping lol
 ```{r}
+# use SelectorGadget
+pterry <- read_html("https://www.goodreads.com/author/show/1654.Terry_Pratchett")
+
+pterry_quotes <- read_html("https://www.goodreads.com/author/quotes/1654.Terry_Pratchett")
+
+quotes <- html_nodes(pterry_quotes, ".quoteText")
+
+html_text(quotes) %>%
+  str_trim(side = "both")
+
+
+quotes1 <-html_nodes(pterry_quotes, ".authorOrTitle")
+
+html_text(quotes1) %>%
+  str_trim(side = "both")
+
+pterry_tags <- html_nodes(pterry_quotes, ".left")
+
+pterry_tags %>%
+  html_text() %>%
+  str_trim(side = "both")
+
+
 
 ```
 
 
-```{r pressure, echo=FALSE}
+```{r sad}
+randomquotes <- read_html("http://quotes.toscrape.com/")
 
+randomquotes_nodes <- html_nodes(randomquotes, ".tags , .text")
+
+randomquotes_nodes %>%
+  html_text()
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
