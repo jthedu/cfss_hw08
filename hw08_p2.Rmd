@@ -1,0 +1,61 @@
+---
+title: "HW08, pt 2:"
+author: "Julia Du"
+date: "`r lubridate::today()`"
+output: 
+  github_document:
+    toc: true
+---
+
+## Load necessary libraries
+
+```{r, message = FALSE}
+library(tidyverse)
+library(stringr)
+library(jsonlite)
+library(httr)
+
+nyt_api <- getOption("nyt_semantics_key")
+guardian_api <- getOption("guardian_key")
+
+theme_set(theme_minimal())
+```
+
+keep in mind you'll need to have your own API key for both NYT (Semantics API) & Guardian API. store it in .Rprofile w/ format of options(keyname = "actualkeycode").
+
+## Overview
+compare coverage of BLM this past yr geographically?
+
+track coverage of gay marriage over time? since maybe 2000?
+
+```{r}
+guard_equal <- GET(
+  url = "https://content.guardianapis.com/tags?",
+  query = list(q = "equal-marriage",
+               format = "xml",
+               api_key = "guardian_api"))
+
+```
+
+## 
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r pressure, echo=FALSE}
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
