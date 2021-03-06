@@ -71,9 +71,26 @@ nyt_response <- content(nyt_trump, "text")
 nyt_response_df <- fromJSON(nyt_response, simplifyDataFrame = TRUE, flatten = TRUE)
 
 str(response_df, max.level = 2)
-
-
 ```
+
+```{r}
+base.url <- "http://api.nytimes.com/svc/search/v2/articlesearch.json"
+search_term <- "'John Mearsheimer'"
+
+r <- GET(base.url, 
+         query = list(`q` = search_term,
+                      `api-key` = nyt_api))
+
+bs <- content(r, "text")
+str_sub(bs, 1, 1000)
+
+bs_df <- fromJSON(bs, simplifyDataFrame = TRUE, flatten = TRUE)
+
+# Inspect the dataframe
+str(bs_df, max.level = 2)
+```
+
+
 
 
 
@@ -155,10 +172,22 @@ try %>%
 ```
 
 
-```{r sad}
+```{r books}
+books <- read_html("http://books.toscrape.com/")
 
+books_titles_nodes <- html_nodes(books, ".product_pod a ")
 
+titles_df <- books_titles_nodes %>%
+  html_text() %>%
+  as_tibble() %>%
+  filter(!(value==""))
 
+books_prices_nodes <- html_nodes(books, ".price_color")
+
+prices_df <- books_prices_nodes %>%
+  html_text() %>%
+  as_tibble() %>%
+  filter(!(value==""))
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
