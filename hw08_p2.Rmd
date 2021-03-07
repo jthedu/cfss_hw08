@@ -202,14 +202,14 @@ manga_p1 <- read_html("https://www.mangaupdates.com/stats.html")
 
 manga_p1_nodes <- html_nodes(manga_p1, ".text-truncate span , .text-truncate u, #main_content .text.text-center")
 
-manga_p1_df <- manga_p1_nodes %>%
-  html_text() %>%
-  as_tibble() %>%
-  filter(!value == "Rank")
+#manga_p1_df <- manga_p1_nodes %>%
+ # html_text() %>%
+  #as_tibble() %>%
+  #filter(!value == "Rank")
 
-manga_p1_df %>%
-  mutate(row = row_number()) %>%
-  pivot_wider(names_from = row, values_from = date, names_prefix = 'event')
+#manga_p1_df %>%
+ # mutate(row = row_number()) %>%
+  #pivot_wider(names_from = row, values_from = date, names_prefix = 'event')
 
 
 manga_vec <- manga_p1_nodes %>%
@@ -218,6 +218,25 @@ manga_vec <- manga_p1_nodes %>%
     
 wip_manga <- split(manga_vec, ceiling(seq_along(manga_vec)/3)) %>%
   as_tibble()
+
+almost_manga_df <- wip_manga %>%
+  mutate(placeholder = c("rank", "title", "genre"), .before = 1) %>% 
+  #could stop here
+  mutate(row = row_number()) %>%
+  filter(!row == "1") %>%
+  pivot_longer(c(`1`:`25`), names_to = "rank", values_to = "values") %>%
+  pivot_wider(names_from = placeholder, values_from = values) 
+
+almost_manga_top <- almost_manga_df %>%
+  slice_head(n = 25)
+
+almost_manga_bottom <- almost_manga_df %>%
+  slice_tail(n = 25)
+
+left_join(almost_manga_top, almost_manga_bottom, by = "rank") %>%
+  select(-c(row.x, genre.x, title.y, row.y)) %>%
+  rename(title = title.x, genre = genre.y)
+
 
 
 #manga_table_nodes <- html_nodes(manga_p1, css = "table")
