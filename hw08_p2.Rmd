@@ -286,12 +286,13 @@ genres_of_interest <- c("Action", "Comedy", "Drama", "Fantasy", "Romance")
 map_dfr(genres_of_interest, genre_count) %>%
   ggplot(mapping = aes(x = genre, y = n, fill = genre, label = n)) +
   geom_col() +
-  labs(title = "Common genres in top 75 mangas", x = "Genre", y = "Count", fill = "") +
-  geom_text()
+  labs(title = "Common genres in 75 top-ranked mangas", subtitle = "As of Mar. 2021", x = "Genre", y = "Number of mangas", fill = "", caption = "Source: mangaupdates.com") +
+  geom_label() +
+  theme(legend.position = "none")
 
 
 
-
+# have to create new functions because unable to map input vectors of diff lengths 
 #shoujo 
 shoujo_genre_count <- function(genre_string){
   length <- manga_75 %>%
@@ -303,25 +304,34 @@ shoujo_genre_count <- function(genre_string){
     filter(str_detect(genre, "Shoujo")) %>%
     filter(str_detect(genre, genre_string)) %>%
     count() %>%
-    mutate(genre = genre_string, percent = n/length_shoujo)
+    mutate(genre = genre_string, percent = n/length, audience = "shoujo")
   }
 
-map_dfr(genres_of_interest, shoujo_genre_count)
+shoujo_df <- map_dfr(genres_of_interest, shoujo_genre_count)
 
-length_shoujo <- manga_75 %>%
-  filter(str_detect(genre, "Shoujo")) %>%
+shounen_genre_count <- function(genre_string){
+  length <- manga_75 %>%
+  filter(str_detect(genre, "Shounen")) %>%
   count() %>%
   pull()
-
-manga_75 %>%
-    filter(str_detect(genre, "Shoujo")) %>%
-    filter(str_detect(genre, "Romance")) %>%
-    count() %>%
-    mutate(genre = "Romance", percent = n/length_shoujo)
   
+  manga_75 %>%
+    filter(str_detect(genre, "Shounen")) %>%
+    filter(str_detect(genre, genre_string)) %>%
+    count() %>%
+    mutate(genre = genre_string, percent = n/length, audience = "shounen")
+  }
 
-shounen <- manga_75 %>%
-  filter(str_detect(genre, "Shounen")) 
+shounen_df <- map_dfr(genres_of_interest, shounen_genre_count)
+
+shoujo_df %>%
+  bind_rows(shounen_df) %>% 
+  ggplot(aes(x = genre, y = percent, fill = audience)) +
+  geom_col(position = position_dodge2(width = 0.9, preserve = "single")) +
+  labs(title = "Top genres among popular shoujo and shounen manga", subtitle = "As of Mar. 2021", x = "Genre", y = "Percentage of audience-specific manga", fill = "Audience", caption = "Source: mangaupdates.com") +
+  scale_y_continuous(labels = scales::percent) +
+  theme(legend.position = "bottom")
+
 ```
 
 
