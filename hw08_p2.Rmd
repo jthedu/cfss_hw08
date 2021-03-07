@@ -195,17 +195,44 @@ titles_df %>%
   bind_cols(prices_df)
 ```
 ```{r mangaupdates}
+library(tidyverse)
+library(rvest)
+
 manga_p1 <- read_html("https://www.mangaupdates.com/stats.html")
 
 manga_p1_nodes <- html_nodes(manga_p1, ".text-truncate span , .text-truncate u, #main_content .text.text-center")
 
-#manga_p1_df <- 
-manga_p1_nodes %>%
+manga_p1_df <- manga_p1_nodes %>%
   html_text() %>%
   as_tibble() %>%
   filter(!value == "Rank")
 
+manga_p1_df %>%
+  mutate(row = row_number()) %>%
+  pivot_wider(names_from = row, values_from = date, names_prefix = 'event')
 
+
+manga_vec <- manga_p1_nodes %>%
+  html_text() %>%
+  purrr::discard(.p = ~stringr::str_detect(.x,"Rank"))
+    
+wip_manga <- split(manga_vec, ceiling(seq_along(manga_vec)/3)) %>%
+  as_tibble()
+
+
+#manga_table_nodes <- html_nodes(manga_p1, css = "table")
+
+#doesn't work
+manga_table_nodes %>%
+  nth(1) %>%
+  html_table(header = TRUE)
+
+manga_box_nodes <- html_nodes(manga_p1, "#main_content .text.text-center , .text.text-center b, .col-md-10")
+
+manga_box_nodes %>%
+  html_text() %>%
+  as_tibble() %>%
+  filter(!value == "Rank")
 
 ```
 
