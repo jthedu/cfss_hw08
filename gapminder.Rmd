@@ -7,8 +7,6 @@ output:
     toc: true
 ---
 
-## ADD A SETUP CHUNK LATER
-
 ## Load necessary libraries
 
 ```{r, message = FALSE}
@@ -25,6 +23,8 @@ theme_set(theme_minimal())
 We know that `geonames` data stores countries using the iso2c format, so we'll convert the `gapminder` country names to be in iso2c format as well.
 Since `gapminder` tracks countries through multiple points in times, it has multiple rows for each country. `geonames` on the other hand only has 1 row for each country & includes info on the square area of the country.
 When we join these 2 dataframes, we'll want to have `gapminder` on the left because it has multiple rows for each country.
+
+**Note**: be sure to register for an API key with the geonames.org website. You'll need this key (in this case, your username) to access the info from geonames. Before running the code you see below, you'll need to open your .Rprofile with `file.edit(here::here(".Rprofile"))`. Then, add your geonames username to the .Rprofile with `options(geonamesUsername = "my_user_name")`.
 
 ```{r}
 countryInfo <- GNcountryInfo()
@@ -53,21 +53,26 @@ joined_country %>%
   ggplot(mapping = aes(x = popdensity, y = lifeExp)) +
   geom_point(aes(color = continent.x), alpha = 0.2) +
   geom_smooth() + 
-  labs(title = "As population density increases, life expectancy generally increases", x = "Population density \n(people per square km)", y = "Average life expectancy", color = "Continent")
+  labs(title = "As population density increases, life expectancy generally increases", 
+       x = "Population density \n(people per square km)", 
+       y = "Average life expectancy", color = "Continent")
 
 joined_country %>%
   ggplot(mapping = aes(x = popdensity, y = lifeExp)) +
   geom_point(alpha = 0.2) +
   geom_smooth(aes(color = continent.x)) +
   facet_wrap(~ continent.x, scales = "free") +
-  labs(title = "As population density increases, life expectancy generally increases", x = "Population density \n(people per square km)", y = "Average life expectancy", color = "Continent")
+  labs(title = "As population density increases, life expectancy generally increases", 
+       x = "Population density \n(people per square km)", 
+       y = "Average life expectancy", color = "Continent")
 ```
-Life expectancy does tend to increase with population density, with an extremely sharp jump from 55 years to about 75 years when we move from a population density of near 0 people per sq. km to about 250 people per sq. km. 
 
-In our faceted graph, there are some fluctuations, but life expectancy generally increases sharply at lower ranges of population densities & then increases more gradually. We see that Oceania looks a bit strange, but that is due to its extremely small number of observations. Asia also stands out for having some extremely high population density values, e.g. 6000 people per sq. km, much higher than the other continents. These extreme values does seem to be due to a few select countries, however, and not a general trend for the Asian continent; most Asian countries are clustered between a population density of 0 and 500 people per sq. km, higher than other continents but much closer than a density of 6000 people per sq. km. Europe also seems to have the highest life expectancies overall.
+Life expectancy does tend to increase with population density, with an extremely sharp jump from 55 years to about 75 years when we move from a population density of near 25 people per sq. km to about 250 people per sq. km. 
+
+In our faceted graph, there are some fluctuations, but life expectancy generally increases sharply at lower ranges of population densities & then increases more gradually. We see that Oceania looks a bit strange, but that likely is due to its extremely small number of observations. Asia also stands out for having some extremely high population density values, e.g. 6000 people per sq. km, much higher than the other continents. These extreme values seem to be from a few select countries, however, and not a general trend for the Asian continent; most Asian countries are clustered between a population density of 0 and 500 people per sq. km, higher than other continents but much closer than a density of 6000 people per sq. km. Europe also seems to have the highest life expectancies overall.
 
 ## Linear model w/ 10-folds
-```{r model}
+```{r model, message = FALSE}
 set.seed(123)
 
 lm_mod <- linear_reg() %>% 
@@ -89,7 +94,7 @@ country_fit_rs %>%
   collect_metrics()
 ```
 
-It looks like predicting life expectancy based on population density alone is a poor idea, at least with a linear model. The RMSE (differences between observed values and model-predicted values of life expectancy) is quite high around 12.61, given that there are a bunch of points with population density between 0 and 100 people per sq. km. The R^2 (i.e. the variance in life expectancy explained by the model) is very low at 3%, further indicating that this linear model isn't great.
+It looks like predicting life expectancy based on population density alone is a poor idea, at least with a linear model. The RMSE (i.e. differences between observed values and model-predicted values of life expectancy) is quite high around 12.61, given that there are a bunch of points with population density between 0 and 100 people per sq. km. The R^2 (i.e. the variance in life expectancy explained by the model) is very low at 3%, further indicating that this linear model isn't great.
 
 ## Session info
 
