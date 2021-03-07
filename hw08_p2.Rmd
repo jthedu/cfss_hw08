@@ -180,14 +180,36 @@ books_titles_nodes <- html_nodes(books, ".product_pod a ")
 titles_df <- books_titles_nodes %>%
   html_text() %>%
   as_tibble() %>%
-  filter(!(value==""))
+  filter(!(value=="")) %>%
+  rename(title = value)
 
 books_prices_nodes <- html_nodes(books, ".price_color")
 
 prices_df <- books_prices_nodes %>%
   html_text() %>%
   as_tibble() %>%
-  filter(!(value==""))
+  filter(!(value=="")) %>%
+  rename(price = value)
+
+titles_df %>%
+  bind_cols(prices_df)
+```
+```{r mangaupdates}
+manga_p1 <- read_html("https://www.mangaupdates.com/stats.html")
+
+manga_p1_nodes <- html_nodes(manga_p1, ".text-truncate span , .text-truncate u, #main_content .text.text-center")
+
+#manga_p1_df <- 
+manga_p1_nodes %>%
+  html_text() %>%
+  as_tibble() %>%
+  filter(!value == "Rank")
+
+
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+
+
