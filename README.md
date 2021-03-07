@@ -9,7 +9,6 @@ For Part 1 (exploring `gapminder` data), you can find the source code at [gapmin
 
 For Part 2 (creating & analyzing our own dataset), you can find the source code at [hw08_p2.Rmd](hw08_p2.Rmd) and the rendered report at [hw08_p2.md](hw08_p2.md).
 
-You will need to retrive your own unique API key (SPEAK MORE ON THIS) and store it in your own .Rprofile.
 
 There's nothing special about running these files - just open the .Rmd files & knit them to get the .md rendered reports.
 
