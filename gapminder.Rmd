@@ -21,7 +21,7 @@ library(tidymodels)
 theme_set(theme_minimal())
 ```
 
-## country info from geonames
+## Country info from geonames
 We know that `geonames` data stores countries using the iso2c format, so we'll convert the `gapminder` country names to be in iso2c format as well.
 Since `gapminder` tracks countries through multiple points in times, it has multiple rows for each country. `geonames` on the other hand only has 1 row for each country & includes info on the square area of the country.
 When we join these 2 dataframes, we'll want to have `gapminder` on the left because it has multiple rows for each country.
@@ -47,8 +47,8 @@ neat_join <- joined_country %>%
 neat_join
 ```
 
-
-```{r graphs}
+## Visualizations
+```{r graphs, message = FALSE}
 joined_country %>%
   ggplot(mapping = aes(x = popdensity, y = lifeExp)) +
   geom_point(aes(color = continent.x), alpha = 0.2) +
@@ -66,6 +66,7 @@ Life expectancy does tend to increase with population density, with an extremely
 
 In our faceted graph, there are some fluctuations, but life expectancy generally increases sharply at lower ranges of population densities & then increases more gradually. We see that Oceania looks a bit strange, but that is due to its extremely small number of observations. Asia also stands out for having some extremely high population density values, e.g. 6000 people per sq. km, much higher than the other continents. These extreme values does seem to be due to a few select countries, however, and not a general trend for the Asian continent; most Asian countries are clustered between a population density of 0 and 500 people per sq. km, higher than other continents but much closer than a density of 6000 people per sq. km. Europe also seems to have the highest life expectancies overall.
 
+## Linear model w/ 10-folds
 ```{r model}
 set.seed(123)
 
@@ -86,17 +87,9 @@ country_fit_rs <- country_wf %>%
 
 country_fit_rs %>%
   collect_metrics()
-
-#country_fit <- country_wf %>%
- # fit(data = neat_join)
-
-#predict(object = country_fit, new_data = neat_join) %>%
- # mutate(actual_lifeExp = neat_join$lifeExp) %>%
-  #rmse(truth = actual_lifeExp, estimate = .pred)
-
-neat_join %>%
-  summarise(mean = mean(lifeExp), sd = sd(lifeExp))
 ```
+
+It looks like predicting life expectancy based on population density alone is a poor idea, at least with a linear model. The RMSE (differences between observed values and model-predicted values of life expectancy) is quite high around 12.61, given that there are a bunch of points with population density between 0 and 100 people per sq. km. The R^2 (i.e. the variance in life expectancy explained by the model) is very low at 3%, further indicating that this linear model isn't great.
 
 ## Session info
 
