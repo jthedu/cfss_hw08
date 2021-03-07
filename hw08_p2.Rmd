@@ -18,7 +18,8 @@ theme_set(theme_minimal())
 ```
 
 ## Overview
-I embraced my weeb side and scraped www.mangaupdates.com to 
+
+I embraced my weeb side and scraped www.mangaupdates.com to look at common genres among the top-rated mangas in March 2021. 
 
 ```{r mangaupdates}
 library(tidyverse)
@@ -60,6 +61,14 @@ neat_manga <- left_join(almost_manga_top, almost_manga_bottom, by = "rank") %>%
 
 neat_manga
 ```
+
+```{r tryhard}
+manga_p1_nodes %>%
+        html_text() %>%
+        as_tibble() %>%
+        filter(!value == "Rank") %>%
+```
+
 
 ```{r manga_multiple}
 multiple_manga <- function(url, pg){
@@ -106,6 +115,7 @@ manga_75 <- map2_dfr(.x = manga_urls, .y = manga_pgs, .f = multiple_manga)
 
 manga_75
 ```
+
 
 ```{r local_copy}
 # for reproducibility's sake, I'm creating copies of the data frame
@@ -179,4 +189,13 @@ shoujo_df %>%
 
 ```
 
+**In case it isn't clear, a manga can be listed as more than one genre.**
+I scraped the 75 highest-ranked mangas and looked at the frequency of specific genres I was interested in. I wasn't surprised that Romance and Fantasy were the most frequent genres, as manga tends to really appeal to escapist tendencies. 
 
+I then looked at the most common genres for 2 different types of manga audiences: shoujo and shounen. Shoujo manga is marketed towards young girls, while shounen is marketed towards young boys. You can see how the resulting distribution across genres reflects stereotypical understandings of gender. For shoujo (i.e. young girls) manga, the top-ranked titles largely fell in the romance and fantasy categories (over 90%, in fact), while there were 0 titles in the action genre. Conversely, top-ranked shounen manga (young boys) saw a reversal of that trend: over 90% of titles fell in the action genre and less than 20% were classified as romance. It is interesting that shounen did see a large percentage of fantasy titles (about 70%). Future analysis could perhaps examine how frequently fantasy shows up with romance because there are very different popular plots for fantasy: some marketed towards boys that focus on getting superpowers and others marketed towards girls that focus on falling into courtly politics.  
+
+## Session info
+
+```{r, echo = TRUE}
+devtools::session_info()
+```
