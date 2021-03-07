@@ -202,16 +202,6 @@ manga_p1 <- read_html("https://www.mangaupdates.com/stats.html")
 
 manga_p1_nodes <- html_nodes(manga_p1, ".text-truncate span , .text-truncate u, #main_content .text.text-center")
 
-#manga_p1_df <- manga_p1_nodes %>%
- # html_text() %>%
-  #as_tibble() %>%
-  #filter(!value == "Rank")
-
-#manga_p1_df %>%
- # mutate(row = row_number()) %>%
-  #pivot_wider(names_from = row, values_from = date, names_prefix = 'event')
-
-
 manga_vec <- manga_p1_nodes %>%
   html_text() %>%
   purrr::discard(.p = ~stringr::str_detect(.x,"Rank"))
@@ -233,29 +223,33 @@ almost_manga_top <- almost_manga_df %>%
 almost_manga_bottom <- almost_manga_df %>%
   slice_tail(n = 25)
 
-left_join(almost_manga_top, almost_manga_bottom, by = "rank") %>%
+neat_manga <- left_join(almost_manga_top, almost_manga_bottom, by = "rank") %>%
   select(-c(row.x, genre.x, title.y, row.y)) %>%
   rename(title = title.x, genre = genre.y)
 
-
-
-#manga_table_nodes <- html_nodes(manga_p1, css = "table")
-
-#doesn't work
-manga_table_nodes %>%
-  nth(1) %>%
-  html_table(header = TRUE)
-
-manga_box_nodes <- html_nodes(manga_p1, "#main_content .text.text-center , .text.text-center b, .col-md-10")
-
-manga_box_nodes %>%
-  html_text() %>%
-  as_tibble() %>%
-  filter(!value == "Rank")
-
+neat_manga
 ```
 
+```{r viz_manga}
+# function to count how many mangas belong to certain genre
+genre_count <- function(genre_string){
+  neat_manga %>%
+    filter(str_detect(genre, genre_string)) %>%
+    count() %>%
+    mutate(genre = genre_string)
+}
 
+genres_of_interest <- c("Action", "Comedy", "Drama", "Fantasy", "Romance")
 
+map_dfr(genres_of_interest, genre_count) %>%
+  ggplot(mapping = aes(x = genre, y = n)) +
+  geom_col()
+
+shoujo <- neat_manga %>%
+  filter(str_detect(genre, "Shoujo")) 
+
+shounen <- neat_manga %>%
+  filter(str_detect(genre, "Shounen")) 
+```
 
 
