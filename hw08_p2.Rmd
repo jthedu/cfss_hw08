@@ -1,5 +1,5 @@
 ---
-title: "HW08, pt 2:"
+title: "HW08, pt 2: Scraping mangaupdates.com"
 author: "Julia Du"
 date: "`r lubridate::today()`"
 output: 
@@ -17,9 +17,19 @@ library(rvest)
 theme_set(theme_minimal())
 ```
 
+## Overview
+I embraced my weeb side and scraped www.mangaupdates.com to 
 
 ```{r mangaupdates}
+library(tidyverse)
+library(rvest)
+
 manga_p1 <- read_html("https://www.mangaupdates.com/stats.html")
+
+write_rds(file = "./save_manga_p1", x = manga_p1)
+
+## QUESTIONS OK
+#read_rds("save_manga_p1")
 
 manga_p1_nodes <- html_nodes(manga_p1, ".text-truncate span , .text-truncate u, #main_content .text.text-center")
 
@@ -93,9 +103,19 @@ manga_urls <- c("https://www.mangaupdates.com/stats.html?page=1&", "https://www.
 manga_pgs <- c(1, 2, 3)
 
 manga_75 <- map2_dfr(.x = manga_urls, .y = manga_pgs, .f = multiple_manga)
+
+manga_75
 ```
 
+```{r local_copy}
+# for reproducibility's sake, I'm creating copies of the data frame
+manga1 <- read_html("https://www.mangaupdates.com/stats.html?page=1&")
+write_rds(file = "./save_manga1", x = manga1)
 
+manga2 <- read_html("https://www.mangaupdates.com/stats.html?page=2&")
+write_rds(file = "./save_manga2", x = manga2)
+
+```
 
 ```{r viz_manga}
 # function to count how many mangas belong to certain genre
