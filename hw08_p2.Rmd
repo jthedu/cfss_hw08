@@ -20,12 +20,11 @@ theme_set(theme_minimal())
 
 ## Overview
 
-I embraced my weeb side and scraped www.mangaupdates.com to look at common genres among the top-rated mangas in March 2021. 
+I embraced my weeb side and scraped www.mangaupdates.com to look at common genres among the top-rated mangas in March 2021. As you'll see below, I store local copies of my scraped data so you can see how I get my results, even if the website changes.
 
-https://github.com/tidyverse/rvest/issues/181#issuecomment-395064636
+## Scraping & cleaning data
 
-
-```{r test_func}
+```{r write_func, warning = FALSE}
 # create folder to store local copies of df
 dir.create("./data")
 
@@ -71,12 +70,15 @@ neat_manga <- left_join(almost_manga_top, almost_manga_bottom, by = "rank") %>%
 neat_manga
 }
 
+# test function
 multiple_manga(2)
 
+# iterate function to get multiple pgs of results
 manga_pgs <- c(1, 2, 3)
 
 manga_75 <- map_dfr(.x = manga_pgs, .f = multiple_manga)
 
+# tidy df to be used for analysis
 manga_75
 
 ```
@@ -85,6 +87,7 @@ The `multiple_manga` function above stores a local copy of the scraped dataframe
 
 (For your convenience, I added a comment on which lines of the function are the scraping code.)
 
+## Visualizations of data
 
 ```{r viz_manga}
 # function to count how many mangas belong to certain genre
@@ -101,34 +104,21 @@ genres_of_interest <- c("Action", "Comedy", "Drama", "Fantasy", "Romance")
 map_dfr(genres_of_interest, genre_count) %>%
   ggplot(mapping = aes(x = genre, y = n, fill = genre, label = n)) +
   geom_col() +
-  labs(title = "Common genres in 75 top-ranked mangas", subtitle = "As of Mar. 2021", x = "Genre", y = "Number of mangas", fill = "", caption = "Source: mangaupdates.com") +
+  labs(title = "Common genres in 75 top-ranked mangas", 
+       subtitle = "As of Mar. 2021", 
+       x = "Genre", y = "Number of mangas", fill = "", 
+       caption = "Source: mangaupdates.com") +
   geom_label() +
   theme(legend.position = "none")
+```
+
+**In case it isn't clear, a manga can be listed as more than one genre.**
+I scraped the 75 highest-ranked mangas and looked at the frequency of specific genres I was interested in. I wasn't surprised that Romance and Fantasy were the most frequent genres, as manga tends to really appeal to escapist tendencies. 
 
 
-
+```{r shoujo_shounen}
 # have to create new functions for counting shoujo & shounen manga
 # because unable to map input vectors of diff lengths, even with pmap (as pmap = PARALLEL mapping)
-
-try_genre_count <- function(audience, genre_string){
-  df <- manga_75 %>%
-    filter(str_detect(genre, audience))
-  
-  length <- df %>%
-  count() %>%
-  pull()
-  
-  df %>%
-    filter(str_detect(genre, genre_string)) %>%
-    count() %>%
-    mutate(genre = genre_string, percent = n/length, audience = "shoujo")
-  }
-
-audience_list <- c("Shoujo", "Shounen")
-
-# gives error since mapped vectors of inconsistent lengths
-map2_dfr(.x = audience_list, .y = genres_of_interest, try_genre_count)
-
 
 # shoujo function 
 shoujo_genre_count <- function(genre_string){
@@ -166,16 +156,18 @@ shoujo_df %>%
   bind_rows(shounen_df) %>% 
   ggplot(aes(x = genre, y = percent, fill = audience)) +
   geom_col(position = position_dodge2(width = 0.9, preserve = "single")) +
-  labs(title = "Top genres among popular shoujo and shounen manga", subtitle = "As of Mar. 2021", x = "Genre", y = "Percentage of audience-specific manga", fill = "Audience", caption = "Source: mangaupdates.com") +
+  labs(title = "Top genres among popular shoujo and shounen manga", 
+       subtitle = "As of Mar. 2021", 
+       x = "Genre", y = "Percentage of audience-specific manga", 
+       fill = "Audience", caption = "Source: mangaupdates.com") +
   scale_y_continuous(labels = scales::percent) +
   theme(legend.position = "bottom")
 
 ```
 
-**In case it isn't clear, a manga can be listed as more than one genre.**
-I scraped the 75 highest-ranked mangas and looked at the frequency of specific genres I was interested in. I wasn't surprised that Romance and Fantasy were the most frequent genres, as manga tends to really appeal to escapist tendencies. 
+**Note**: As alluded to in my comment in the code, I had to write 2 different functions to analyze shoujo and shounen manga because `pmap` and/or `map2` require mapped vectors to be of equal lengths. I tried writing a function that took target audience as an input (i.e. w/ values of shoujo or shounen) alongside my pre-defined genres of interest (which has 5 possible values). However, due to this need for mapped vectors of consistent length, I had to write 2 separate functions instead.
 
-I then looked at the most common genres for 2 different types of manga audiences: shoujo and shounen. Shoujo manga is marketed towards young girls, while shounen is marketed towards young boys. You can see how the resulting distribution across genres reflects stereotypical understandings of gender. For shoujo (i.e. young girls) manga, the top-ranked titles largely fell in the romance and fantasy categories (over 90%, in fact), while there were 0 titles in the action genre. Conversely, top-ranked shounen manga (young boys) saw a reversal of that trend: over 90% of titles fell in the action genre and less than 20% were classified as romance. It is interesting that shounen did see a large percentage of fantasy titles (about 70%). Future analysis could perhaps examine how frequently fantasy shows up with romance because there are very different popular plots for fantasy: some marketed towards boys that focus on getting superpowers and others marketed towards girls that focus on falling into courtly politics.  
+After looking at overall manga, I looked at the most common genres for 2 different types of manga audiences: shoujo and shounen. Shoujo manga is marketed towards young girls, while shounen is marketed towards young boys. You can see how the resulting distribution across genres reflects stereotypical understandings of gender. For shoujo (i.e. young girls) manga, the top-ranked titles largely fell in the romance and fantasy categories (over 90%, in fact), while there were 0 titles in the action genre. Conversely, top-ranked shounen manga (young boys) saw a reversal of that trend: over 90% of titles fell in the action genre and less than 20% were classified as romance. It is interesting that shounen did see a large percentage of fantasy titles (about 70%). Future analysis could perhaps examine how frequently fantasy shows up with romance because there are very different popular plots for fantasy: some marketed towards boys that focus on getting superpowers and others marketed towards girls that focus on falling into courtly politics.  
 
 ## Session info
 
