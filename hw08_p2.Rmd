@@ -13,6 +13,7 @@ output:
 library(tidyverse)
 library(stringr)
 library(rvest)
+library(glue)
 
 theme_set(theme_minimal())
 ```
@@ -32,11 +33,7 @@ manga_p1 <- read_html("https://www.mangaupdates.com/stats.html")
 write_rds(file = "./save_manga_p1.rds", x = manga_p1)
 
 # get errors
-save_manga_p1 <- read_rds("./save_manga_p1.rds")
-View(save_manga_p1)
-
-
-
+#save_manga_p1 <- read_rds("./save_manga_p1.rds")
 
 manga_p1_nodes <- html_nodes(manga_p1, ".text-truncate span , .text-truncate u, #main_content .text.text-center")
 
@@ -46,6 +43,10 @@ manga_vec <- manga_p1_nodes %>%
     
 wip_manga <- split(manga_vec, ceiling(seq_along(manga_vec)/3)) %>%
   as_tibble()
+
+# stores dataframe
+wip_manga %>%
+  write_csv("./wip_manga.csv")
 
 almost_manga_df <- wip_manga %>%
   mutate(placeholder = c("rank", "title", "genre"), .before = 1) %>% 
@@ -68,13 +69,6 @@ neat_manga <- left_join(almost_manga_top, almost_manga_bottom, by = "rank") %>%
 neat_manga
 ```
 
-```{r tryhard}
-manga_p1_nodes %>%
-        html_text() %>%
-        as_tibble() %>%
-        filter(!value == "Rank") %>%
-```
-
 
 ```{r manga_multiple}
 multiple_manga <- function(url, pg){
@@ -88,6 +82,10 @@ manga_vec <- manga_nodes %>%
     
 wip_manga <- split(manga_vec, ceiling(seq_along(manga_vec)/3)) %>%
   as_tibble()
+
+# stores dataframe
+wip_manga %>%
+  write_csv(glue("./stored_df_pg{pg}.csv"))
 
 almost_manga_df <- wip_manga %>%
   mutate(placeholder = c("rank", "title", "genre"), .before = 1) %>% 
