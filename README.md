@@ -9,8 +9,9 @@ For Part 1 (exploring `gapminder` data), you can find the source code at [gapmin
 
 For Part 2 (creating & analyzing our own dataset), you can find the source code at [hw08_p2.Rmd](hw08_p2.Rmd) and the rendered report at [hw08_p2.md](hw08_p2.md).
 
-
 There's nothing special about running these files - just open the .Rmd files & knit them to get the .md rendered reports.
+
+**Note**: be sure to register for an API key with the geonames.org website. You'll need this key (in this case, your username) to access the info from geonames for running [gapminder.Rmd](gampinder.Rmd). (I discuss this in more detail there as well.)
 
 ## Required packages
 
@@ -19,16 +20,15 @@ You should have the following packages installed:
 ```r
 library(reprex)
 library(tidyverse)
-library(knitr)
-library(lubridate)
+
+library(geonames)
+library(countrycode)
+library(gapminder)
 library(tidymodels)
 
-library(usemodels)
-library(kknn)
-library(glmnet)
-library(xgboost)
-library(vip)
-
+library(stringr)
+library(rvest)
+library(glue)
 ```
-2nd chunk of packages are more specialized - most of these are needed for running the specific models we use.
-# hw08
+
+The 2nd chunk of packages are needed for gapminder.Rmd & allow you to access country information and run a statistical learning model. The 3rd chunk is needed to scrape a website in hw08_p2.Rmd.
