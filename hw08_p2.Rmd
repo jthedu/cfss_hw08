@@ -25,15 +25,7 @@ I embraced my weeb side and scraped www.mangaupdates.com to look at common genre
 https://github.com/tidyverse/rvest/issues/181#issuecomment-395064636
 
 ```{r mangaupdates}
-library(tidyverse)
-library(rvest)
-
 manga_p1 <- read_html("https://www.mangaupdates.com/stats.html")
-
-write_rds(file = "./save_manga_p1.rds", x = manga_p1)
-
-# get errors
-#save_manga_p1 <- read_rds("./save_manga_p1.rds")
 
 manga_p1_nodes <- html_nodes(manga_p1, ".text-truncate span , .text-truncate u, #main_content .text.text-center")
 
@@ -47,6 +39,9 @@ wip_manga <- split(manga_vec, ceiling(seq_along(manga_vec)/3)) %>%
 # stores dataframe
 wip_manga %>%
   write_csv("./wip_manga.csv")
+
+# can retrieve stored dataframe & use in following code
+# wip_manga <- read_csv("./wip_manga.csv")
 
 almost_manga_df <- wip_manga %>%
   mutate(placeholder = c("rank", "title", "genre"), .before = 1) %>% 
@@ -121,14 +116,57 @@ manga_75
 ```
 
 
-```{r local_copy}
-# for reproducibility's sake, I'm creating copies of the data frame
-manga1 <- read_html("https://www.mangaupdates.com/stats.html?page=1&")
-write_rds(file = "./save_manga1", x = manga1)
+```{r test_func}
+one_multiple_manga <- function(pg){
+  manga <- read_html(glue("https://www.mangaupdates.com/stats.html?page={pg}&"))
 
-manga2 <- read_html("https://www.mangaupdates.com/stats.html?page=2&")
-write_rds(file = "./save_manga2", x = manga2)
+manga_nodes <- html_nodes(manga, ".text-truncate span , .text-truncate u, #main_content .text.text-center")
 
+manga_vec <- manga_nodes %>%
+  html_text() %>%
+  purrr::discard(.p = ~stringr::str_detect(.x,"Rank"))
+    
+wip_manga <- split(manga_vec, ceiling(seq_along(manga_vec)/3)) %>%
+  as_tibble()
+
+# stores dataframe
+wip_manga %>%
+  write_csv(glue("./one_stored_df_pg{pg}.csv"))
+
+almost_manga_df <- wip_manga %>%
+  mutate(placeholder = c("rank", "title", "genre"), .before = 1) %>% 
+  #could stop here
+  mutate(row = row_number()) %>%
+  filter(!row == "1") %>%
+  pivot_longer(c(`1`:`25`), names_to = "rank", values_to = "values") %>%
+  pivot_wider(names_from = placeholder, values_from = values) 
+
+almost_manga_top <- almost_manga_df %>%
+  slice_head(n = 25)
+
+almost_manga_bottom <- almost_manga_df %>%
+  slice_tail(n = 25)
+
+neat_manga <- left_join(almost_manga_top, almost_manga_bottom, by = "rank") %>%
+  select(-c(row.x, genre.x, title.y, row.y)) %>%
+  rename(title = title.x, genre = genre.y) %>%
+  mutate(rank = as.numeric(rank)) %>%
+  mutate(rank = rank + 25*(pg-1))
+
+neat_manga
+}
+
+one_multiple_manga(2)
+
+
+multiple_manga("https://www.mangaupdates.com/stats.html?page=2&", 2)
+
+manga_urls <- c("https://www.mangaupdates.com/stats.html?page=1&", "https://www.mangaupdates.com/stats.html?page=2&", "https://www.mangaupdates.com/stats.html?page=3&")
+manga_pgs <- c(1, 2, 3)
+
+manga_75 <- map2_dfr(.x = manga_urls, .y = manga_pgs, .f = multiple_manga)
+
+manga_75
 ```
 
 ```{r viz_manga}
