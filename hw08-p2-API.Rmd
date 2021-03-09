@@ -17,7 +17,7 @@ library(stringr)
 library(jsonlite)
 library(httr)
 library(lubridate)
-library(viridis)
+library(glue)
 
 nyt_key <- getOption("nyt_semantics_key")
 
@@ -49,11 +49,11 @@ response <- content(articles, "text")
 response_df <- fromJSON(response, simplifyDataFrame = TRUE, flatten = TRUE) 
 
 docs <- response_df %>%
-  with(response) # tidyverse alternative to response_df$response$docs
+  with(response) 
+# tidyverse alternative to response_df$response$docs, but struggled to use w/in a function
 
 #extract total hits
-hits <- response_df %>%
-  with(hits) # tidyverse alternative to response_df$response$meta$hits
+hits <- response_df$response$meta$hits
 
 # get number of pages
 pages <- ceiling(hits/10)
@@ -61,8 +61,11 @@ pages <- ceiling(hits/10)
 ```
 
 
-## Iterating API use 
-```{r iterate_nyt, cache = TRUE}
+## Iterating API use
+
+I have set this chunk's options to `message = FALSE` because I don't want to have all the messages in my knitted .md document. However, when testing this code, I'd recommend setting `message = TRUE` so you have an idea of what's going on. 
+
+```{r iterate_nyt, cache = TRUE, message = FALSE}
 nyt_api <- function(term, pg){
   base.url <- "https://api.nytimes.com/svc/search/v2/articlesearch.json"
   filter_query <- 'source:("The New York Times") AND news_desk:("National") AND section_name:("U.S.") AND document_type:("article")'
@@ -85,17 +88,16 @@ nyt_api <- function(term, pg){
 
   message(glue("Scraping page {pg}"))
   
-  response_df %>%
-    with(response)
+  return(response_df$response$docs)
+  
 }
 
 #nyt_api(term = "gay marriage", pg = 4)
 
-nyt_api_slow <- slowly(nyt_api, rate = rate_delay(2))
+nyt_api_slow <- slowly(nyt_api, rate = rate_delay(6))
 
 docs_df <- map_dfr((0:pages), ~nyt_api_slow(term = "Obama gay marriage", pg = .))
 ```
-
 
 
 # Visualizing NYT coverage
@@ -113,8 +115,7 @@ date_docs %>%
   theme(axis.text.x = element_blank()) 
 ```
 
-There are several notable peaks in coverage, namely mid-2009, early/mid-2012, mid-2013, and mid-2015. 
+There are several notable peaks in coverage, namely mid-2009, early/mid-2012, 2013, and mid-2015. 
 
 In June 2009, Obama signed a [Presidential Memo](https://www.pbs.org/wgbh/americanexperience/features/stonewall-milestones-american-gay-rights-movement/) that let same-sex partners of federal employees receive specified benefits. 
-There were a lot of articles in early/mid-2012, likely because it was an election year and gay marriage was one of the main issues presidential candidates were evaluated on. I'm not too sure why there was a peak in mid-2013, but the peak in 2015 was due to the historic Supreme Court decision that declared gay marriage legal in the U.S. 
-
+There were a lot of articles in early/mid-2012, likely because it was an election year and gay marriage was one of the main issues presidential candidates were evaluated on. I'm not too sure why there were peaks in 2013, but the peak in 2015 was due to the historic Supreme Court decision that declared gay marriage legal in the U.S. 
