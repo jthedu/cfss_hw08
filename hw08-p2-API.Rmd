@@ -7,6 +7,8 @@ output:
     toc: true
 ---
 
+**Note:** You're going to need to register for a NYT Developer account in order to use their APIs, all of which require authentication. Before running the code you see below, you'll need to open your .Rprofile with `file.edit(here::here(".Rprofile"))` and add your NYT API key to the .Rprofile with `options(nyt_semantics_key = "my_user_name")`.
+
 ## Load necessary libraries
 
 ```{r, message = FALSE}
@@ -15,20 +17,25 @@ library(stringr)
 library(jsonlite)
 library(httr)
 library(lubridate)
+library(viridis)
 
 nyt_key <- getOption("nyt_semantics_key")
 
 theme_set(theme_minimal())
 ```
 
-```{r nyt_nerd}
-# testing from: https://github.com/claramfong/hw08/blob/master/nyt.Rmd
+# Overview
 
+The goal here was to look at how coverage of President Obama on gay marriage fluctuated with time. I used the New York Times's Article Search API and heavily relied upon their [documentation](https://developer.nytimes.com/docs/articlesearch-product/1/routes/articlesearch.json/get) to figure out how to format my request. I also drew heavily from [this site](https://plsc-31101.github.io/course/collecting-data-from-the-web.html#writing-api-queries).
+
+## Using API for 1 pg of results
+```{r nyt_nerd}
 base.url <- "https://api.nytimes.com/svc/search/v2/articlesearch.json"
 search_term <- "Obama gay marriage"
-filter_query <- 'source:("The New York Times") AND news_desk:("National") AND section_name:("U.S.") AND document_type:("article")'
-begin <- "20090120" #Obama term start
-end <- "20170120" #Obama term end
+filter_query <- 'source:("The New York Times") AND news_desk:("National") 
+AND section_name:("U.S.") AND document_type:("article")' 
+begin <- "20090120" #Obama presidency start
+end <- "20170120" #Obama presidency end
 
 articles <- GET(base.url, 
                 query = list(`q` = search_term,
@@ -41,13 +48,8 @@ response <- content(articles, "text")
 
 response_df <- fromJSON(response, simplifyDataFrame = TRUE, flatten = TRUE) 
 
-# for testing purposes
-# str(response_df, max.level = 2)
-
-
 docs <- response_df %>%
   with(response) # tidyverse alternative to response_df$response$docs
-
 
 #extract total hits
 hits <- response_df %>%
@@ -59,7 +61,7 @@ pages <- ceiling(hits/10)
 ```
 
 
-
+## Iterating API use 
 ```{r iterate_nyt, cache = TRUE}
 nyt_api <- function(term, pg){
   base.url <- "https://api.nytimes.com/svc/search/v2/articlesearch.json"
@@ -96,19 +98,23 @@ docs_df <- map_dfr((0:pages), ~nyt_api_slow(term = "Obama gay marriage", pg = .)
 
 
 
-
+# Visualizing NYT coverage
 ```{r viz_nyt}
 date_docs <- docs_df %>%
   mutate(date = ymd_hms(pub_date), .before = abstract) %>% 
   count(floor_date(date, "month")) %>%
-  rename(month = 1, count = n)
-
-
-# mutate(date = format_ISO8601(date, precision = "ym"))
+  rename(month = 1, count = n) %>%
+  mutate(year = year(month), year = as.factor(year))
 
 date_docs %>%
-  ggplot(aes(x = month, y = count)) +
+  ggplot(aes(x = month, y = count, fill = year)) +
   geom_col() +
-  labs(title = "NYT coverage of Obama on gay marriage \nover his presidency", x = "Date", y = "Number of articles")
-
+  labs(title = "NYT monthly coverage of President Obama on gay marriage", subtitle = "From Jan. 2009 to Jan. 2017", x = "Date", y = "Number of articles", fill = "Year", caption = "Source: nytimes.com") +
+  theme(axis.text.x = element_blank()) 
 ```
+
+There are several notable peaks in coverage, namely mid-2009, early/mid-2012, mid-2013, and mid-2015. 
+
+In June 2009, Obama signed a [Presidential Memo](https://www.pbs.org/wgbh/americanexperience/features/stonewall-milestones-american-gay-rights-movement/) that let same-sex partners of federal employees receive specified benefits. 
+There were a lot of articles in early/mid-2012, likely because it was an election year and gay marriage was one of the main issues presidential candidates were evaluated on. I'm not too sure why there was a peak in mid-2013, but the peak in 2015 was due to the historic Supreme Court decision that declared gay marriage legal in the U.S. 
+
