@@ -1,0 +1,114 @@
+---
+title: "HW08, pt 2: Exploring NYT API"
+author: "Julia Du"
+date: "`r lubridate::today()`"
+output: 
+  github_document:
+    toc: true
+---
+
+## Load necessary libraries
+
+```{r, message = FALSE}
+library(tidyverse)
+library(stringr)
+library(jsonlite)
+library(httr)
+library(lubridate)
+
+nyt_key <- getOption("nyt_semantics_key")
+
+theme_set(theme_minimal())
+```
+
+```{r nyt_nerd}
+# testing from: https://github.com/claramfong/hw08/blob/master/nyt.Rmd
+
+base.url <- "https://api.nytimes.com/svc/search/v2/articlesearch.json"
+search_term <- "Obama gay marriage"
+filter_query <- 'source:("The New York Times") AND news_desk:("National") AND section_name:("U.S.") AND document_type:("article")'
+begin <- "20090120" #Obama term start
+end <- "20170120" #Obama term end
+
+articles <- GET(base.url, 
+                query = list(`q` = search_term,
+                             `fq` = filter_query,
+                             `begin_date` = begin,
+                             `end_date` = end,
+                             `api-key` = nyt_key))
+
+response <- content(articles, "text")
+
+response_df <- fromJSON(response, simplifyDataFrame = TRUE, flatten = TRUE) 
+
+# for testing purposes
+# str(response_df, max.level = 2)
+
+
+docs <- response_df %>%
+  with(response) # tidyverse alternative to response_df$response$docs
+
+
+#extract total hits
+hits <- response_df %>%
+  with(hits) # tidyverse alternative to response_df$response$meta$hits
+
+# get number of pages
+pages <- ceiling(hits/10)
+
+```
+
+
+
+```{r iterate_nyt, cache = TRUE}
+nyt_api <- function(term, pg){
+  base.url <- "https://api.nytimes.com/svc/search/v2/articlesearch.json"
+  filter_query <- 'source:("The New York Times") AND news_desk:("National") AND section_name:("U.S.") AND document_type:("article")'
+  begin <- "20090120" #Obama term start
+  end <- "20170120" #Obama term end
+  
+  # send GET request
+  articles <- GET(base.url, 
+                  query = list(`q` = term,
+                               `fq` = filter_query,
+                               `begin_date` = begin,
+                               `end_date` = end,
+                               `page` = pg,
+                               `api-key` = nyt_key))
+  
+  # Parse response to JSON
+  response <- content(articles, "text")
+  
+  response_df <- fromJSON(response, simplifyDataFrame = TRUE, flatten = TRUE) 
+
+  message(glue("Scraping page {pg}"))
+  
+  response_df %>%
+    with(response)
+}
+
+#nyt_api(term = "gay marriage", pg = 4)
+
+nyt_api_slow <- slowly(nyt_api, rate = rate_delay(2))
+
+docs_df <- map_dfr((0:pages), ~nyt_api_slow(term = "Obama gay marriage", pg = .))
+```
+
+
+
+
+```{r viz_nyt}
+date_docs <- docs_df %>%
+  mutate(date = ymd_hms(pub_date), .before = abstract) %>% 
+  count(floor_date(date, "month")) %>%
+  rename(month = 1, count = n)
+
+
+# mutate(date = format_ISO8601(date, precision = "ym"))
+
+date_docs %>%
+  ggplot(aes(x = month, y = count)) +
+  geom_col() +
+  labs(title = "NYT coverage of Obama on gay marriage \nover his presidency", x = "Date", y = "Number of articles")
+
+```
